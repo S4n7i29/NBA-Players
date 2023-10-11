@@ -105,6 +105,96 @@ def insert_player_data(url):
                                             player_data['Draft Year'])
                 cur.execute(insert_draft_script, insert_draft_values)
 
+                #REGULAR SEASON STATS
+                for stat in player_data['Regular Season Stats']:
+                    
+                    #SELECT TEAM ID
+                    select_team_script  =   '''
+                                            SELECT id FROM teams
+                                            WHERE team = %s
+                                            '''
+                    select_team_values  =   (stat['Team'],)
+                    cur.execute(select_team_script, select_team_values)
+                    #GET TEAM ID
+                    t_id = cur.fetchone()
+                    
+                    #INSERT REGULAR SEASON STATS
+                    insert_stats_script =   '''
+                                            INSERT INTO player_rs_stats
+                                            (player_id, season, team_id,
+                                            gp, gs, mp, fg, fga, fgp, tp, tpa, tpp, ft, fta, ftp, ofr, dfr, ast, stl, blk, tov, pf, pts)
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            '''
+                    insert_stats_values =   (p_id,
+                                            stat['Season'],
+                                            t_id,
+                                            stat['Games Played'],
+                                            stat['Games Started'],
+                                            stat['Minutes Played'],
+                                            stat['Field Goals'],
+                                            stat['Field Goal Attempts'],
+                                            stat['Field Goal Percentage'],
+                                            stat['Three Points'],
+                                            stat['Three Point Attempts'],
+                                            stat['Three Point Percentage'],
+                                            stat['Free Throws'],
+                                            stat['Free Throws Attempts'],
+                                            stat['Free Throws Percentage'],
+                                            stat['Offensive Rebounds'],
+                                            stat['Defensive Rebounds'],
+                                            stat['Assists'],
+                                            stat['Steals'],
+                                            stat['Blocks'],
+                                            stat['Turnovers'],
+                                            stat['Personal Fouls'],
+                                            stat['Points'])
+                    cur.execute(insert_stats_script, insert_stats_values)
+
+                #PLAYOFFS STATS
+                for stat in player_data['Playoffs Stats']:
+                    
+                    #SELECT TEAM ID
+                    select_team_script  =   '''
+                                            SELECT id FROM teams
+                                            WHERE team = %s
+                                            '''
+                    select_team_values  =   (stat['Team'],)
+                    cur.execute(select_team_script, select_team_values)
+                    #GET TEAM ID
+                    t_id = cur.fetchone()
+                    
+                    #INSERT PLAYOFFS STATS
+                    insert_stats_script =   '''
+                                            INSERT INTO player_po_stats
+                                            (player_id, season, team_id,
+                                            gp, gs, mp, fg, fga, fgp, tp, tpa, tpp, ft, fta, ftp, ofr, dfr, ast, stl, blk, tov, pf, pts)
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            '''
+                    insert_stats_values =   (p_id,
+                                            stat['Season'],
+                                            t_id,
+                                            stat['Games Played'],
+                                            stat['Games Started'],
+                                            stat['Minutes Played'],
+                                            stat['Field Goals'],
+                                            stat['Field Goal Attempts'],
+                                            stat['Field Goal Percentage'],
+                                            stat['Three Points'],
+                                            stat['Three Point Attempts'],
+                                            stat['Three Point Percentage'],
+                                            stat['Free Throws'],
+                                            stat['Free Throws Attempts'],
+                                            stat['Free Throws Percentage'],
+                                            stat['Offensive Rebounds'],
+                                            stat['Defensive Rebounds'],
+                                            stat['Assists'],
+                                            stat['Steals'],
+                                            stat['Blocks'],
+                                            stat['Turnovers'],
+                                            stat['Personal Fouls'],
+                                            stat['Points'])
+                    cur.execute(insert_stats_script, insert_stats_values)
+
     except Exception as error:
         print(error)
 
