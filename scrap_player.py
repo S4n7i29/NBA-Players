@@ -18,6 +18,7 @@ def access_field(fields, condition, before_next):
 #CREATE PLAYER DATA DICT
 player_data = {}
 #SET SOUP
+url = ''
 page = requests.get(url)
 soup = BeautifulSoup(page.text, 'lxml')
 #SET PLAYER INFO FIELDS
@@ -45,6 +46,7 @@ if birth_field is not None:
     place_of_birth = separated_birth_place[0].rstrip()
     state_of_birth = " ".join(separated_birth_place[1:])[1:].rstrip()
     country_of_birth = birth_field.find_all('span')[2].text.rstrip()      # Falta cambiar los códigos por el país!!!
+#GET PLAYER POSITIONS/SHOOTS
 positions_shoots_field = access_field(player_info_fields, 'Position:', 0)
 if positions_shoots_field is not None:
     separated_positions_shoots = positions_shoots_field.text.split('▪')
@@ -52,16 +54,26 @@ if positions_shoots_field is not None:
     positions = separated_positions_shoots[0][19:].rstrip().replace(' and ', ', ').split(', ')
     for n in enumerate(positions):
         positions[n[0]] = positions[n[0]].strip(',')
+#GET PLAYER PHYSICAL INFO
 height_weight_field = access_field(player_info_fields, ['lb', 'cm', 'kg'], 0)     # O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
 if height_weight_field is not None:
     separated_height_weight = height_weight_field.text.split('(')[1].rstrip()[:-1].split(',')
     height = separated_height_weight[0][:-2]
     weight = separated_height_weight[1][1:][:-2]
+#GET PLAYER COLLEGE
 college_field = access_field(player_info_fields, 'College:', 0)
 if college_field is not None:
     college = college_field.text.strip()[19:]
 else:
     college = None
+#GET DRAFT
+draft_field = access_field(player_info_fields, 'Draft:', 0)
+if draft_field is not None:
+    draft_team = draft_field.find_all('a')[0].text
+    separated_round_pick = draft_field.text.split(',')[1].strip().split('(')
+    round = separated_round_pick[0][0]
+    pick = separated_round_pick[1][0]
+    draft_year = draft_field.find_all('a')[1].text[0:4]    
 
 #PRINTS (Para chequear)
 print("\nPLAYER INFO:")
@@ -79,3 +91,9 @@ if college is not None:
     print("\nCollege: " + college)
 else:
     print("\nNo College")
+print("\nDRAFT")
+print("Team: " + draft_team)
+print("Round: " + round)
+print("Pick: " + pick)
+print("Year: " + draft_year)
+print("\n\nREGULAR SEASON STATS:")
