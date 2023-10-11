@@ -11,7 +11,9 @@ def generate_teams_data():
     #GET TEAMS, RINGS AND RELATED NAMES
     active_teams_table = soup.find('div', id='div_teams_active').find('tbody')
     if active_teams_table is not None:
-        #SET DICTS AND ROWS
+        
+        #SET TEAMS LIST, DICTS AND ROWS
+        teams = []
         active_teams_wr_dict = {}
         active_teams_names_dict = {}
         current_team = None
@@ -19,15 +21,33 @@ def generate_teams_data():
 
         for row in active_teams_rows:
             if 'full_table' in row['class']:
+                
                 #GET TEAM AND RINGS
                 current_team = row.find('th').text.strip()
                 rings = int(row.find('td', {'data-stat': 'years_league_champion'}).text.strip())
+                
+                teams.append((current_team, True))
                 active_teams_names_dict[current_team] = []
                 active_teams_wr_dict[current_team] = rings
+            
             elif 'partial_table' in row['class'] and current_team:
+                
                 #GET TEAM'S RELATED NAME/S
                 related_name = row.find('th').text.strip()
+
+                teams.append((related_name, False))
                 active_teams_names_dict[current_team].append(related_name)
+
+    #CLEAN TEAMS LIST
+    tracked_names = set()
+    aux_teams = []
+    for t in teams:
+        name = t[0]
+        if name not in tracked_names:
+            tracked_names.add(name)  # Agregar el nombre al conjunto
+            aux_teams.append(t)
+    
+    teams = aux_teams
 
     #GET DIVISIONS & CONFERENCES
     divisions = soup.select('div#footer_general div#site_menu li div.division')
@@ -39,39 +59,39 @@ def generate_teams_data():
             'West' : ['Northwest', 'Pacific', 'Southwest']
         }
 
-        #CREATE TEAMS LIST
-        active_teams = []
-        for t, r in active_teams_wr_dict.items():
-            active_teams.append(t)
-
-        #GET DIVISIONS
+        #SET DIVISION/TEAMS DICT
         division_team = {}
         for d in divisions:
             division = d.find('strong').text.strip()
-            teams = []
+            ts = []
             for t in d.find_all('a'):
-                t_ = t.text.strip()
-                for t__ in active_teams:
-                    if t_ in t__:
-                        teams.append(t__)
-                        break
-            division_team[division] = teams
+                t = t.text.strip()
+                for team in teams:
+                    if team[1] == True:
+                        if t in team[0]:
+                            ts.append(team[0])
+                            break
+            division_team[division] = ts
 
-        #CREATE TEAMS INFO DICT
+        #CREATE TEAMS / CONFERENCE & DIVISION DICT
         active_teams_wcd_dict = {}
-        for t in active_teams:
-            for c, ds in conference_division.items():
-                for d in ds:
-                    if t in division_team[d]:
-                        active_teams_wcd_dict[t] = {'Conf': c, 'Div': d}
+        for t in teams:
+            if t[1] == True:
+                for c, ds in conference_division.items():
+                    for d in ds:
+                        if t[0] in division_team[d]:
+                            active_teams_wcd_dict[t[0]] = {'Conf': c, 'Div': d}
+    '''
+    #PRINTS (Para chequear)        
+    
+    for t in teams:
+        if t[1] == True:
+            print(f'\n{t[0].upper()} - Rings: {active_teams_wr_dict[t[0]]}, Conference: {active_teams_wcd_dict[t[0]]["Conf"]}, Division: {active_teams_wcd_dict[t[0]]["Div"]}')
 
-    #PRINTS (Para chequear)
-    for t in active_teams:
-        print(f'{t.upper()} - Rings: {active_teams_wr_dict[t]}, Conference: {active_teams_wcd_dict[t]["Conf"]}, Division: {active_teams_wcd_dict[t]["Div"]}\n')
-
-    print('\n')
-
+    print('\n\n')
+    
     for t, n in active_teams_names_dict.items():
         print(f'{t.upper()}: {n}\n')
+    '''
     
-    return active_teams, active_teams_wr_dict, active_teams_wcd_dict
+    return teams, active_teams_wr_dict, active_teams_wcd_dict
