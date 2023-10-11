@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 
+#ACCESS FIELD FUNCTION (Busca, en una lista de campos, uno en específico, siguiendo una condición (contiene a))
 def access_field(fields, condition, before_next):
     if type(condition) != list:
         condition = [condition]
@@ -14,29 +15,28 @@ def access_field(fields, condition, before_next):
                 break
         return x_field
 
-
+#CREATE PLAYER DATA DICT
 player_data = {}
-
-url = ''
+#SET SOUP
 page = requests.get(url)
 soup = BeautifulSoup(page.text, 'lxml')
-
+#SET PLAYER INFO FIELDS
 player_info = soup.find('div', id='meta').find('div', class_=lambda x: x != 'media-item')
 player_info_fields = player_info.find_all('p')
-
+#SET STATS TABLES DIV
 stats_per_game_tables_div = soup.find('div', id='switcher_per_game-playoffs_per_game')
-
+#SET REGULAR SEASON STATS PER GAME TABLE
 rs_stats_per_game_table = stats_per_game_tables_div.find_all('table')[0].find('tbody')
 rs_stats_per_game_rows = rs_stats_per_game_table.find_all('tr')
-
+#SET PLAYOFFS STATS PER GAME TABLE
 po_stats_per_game_table = stats_per_game_tables_div.find_all('table')[1].find('tbody')
 po_stats_per_game_rows = po_stats_per_game_table.find_all('tr')
-
+#GET PLAYER NAME
 name = player_info.find('h1').find('span').text
 separated_name = name.split(' ')
 first_name = separated_name[0].strip()
 last_name = " ".join(separated_name[1:]).strip()
-
+#GET PLAYER BIRTH INFO
 birth_field = access_field(player_info_fields, 'Born:', 0)
 if birth_field is not None:
     date_of_birth = birth_field.find_all('span')[0]['data-birth'].rstrip()
@@ -63,7 +63,7 @@ if college_field is not None:
 else:
     college = None
 
-
+#PRINTS (Para chequear)
 print("\nPLAYER INFO:")
 print("\nFirst Name: " + first_name)
 print("Last Name: " + last_name)
