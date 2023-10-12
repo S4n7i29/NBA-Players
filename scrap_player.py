@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 import requests
-from dicts.team_code_dict import team_code_dict
 
 #ACCESS FIELD FUNCTION (Busca, en una lista de campos, uno en específico, siguiendo una condición (contiene a))
 def access_field(fields, condition, before_next):
@@ -36,7 +35,7 @@ def generate_player_data(url):
     soup = BeautifulSoup(page.text, 'lxml')
 
     #SET PLAYER INFO FIELDS
-    player_info = soup.find('div', id='meta').find('div', class_=lambda x: x != 'media-item')
+    player_info = soup.find('div', id='meta').find('div', class_=lambda x: x != 'media-item')   #Me tira un error en el soup, no sé si la página me bloqueó el scrap o qué
     player_info_fields = player_info.find_all('p')
 
     #SET STATS TABLES DIV
@@ -109,8 +108,11 @@ def generate_player_data(url):
             season = modify_stat_type(season,int)
             one_year_dict['Season'] = season
             #Team
-            team = row.find_all('td')[1].text
-            one_year_dict['Team'] = team_code_dict[team]
+            team_url = 'https://www.basketball-reference.com/' + (row.find_all('td')[1].find('a')['href'])
+            team_page = requests.get(team_url)
+            team_soup = BeautifulSoup(team_page.text, 'lxml')
+            team = team_soup.find('h1').find_all('span')[1].text.strip()
+            one_year_dict['Team'] = team
             #Games Played
             games_played = row.find_all('td')[4].text
             games_played = modify_stat_type(games_played, int)
@@ -207,8 +209,11 @@ def generate_player_data(url):
             season = modify_stat_type(season,int)
             one_year_dict['Season'] = season
             #Team
-            team = row.find_all('td')[1].text
-            one_year_dict['Team'] = team_code_dict[team]
+            team_url = 'https://www.basketball-reference.com/' + (row.find_all('td')[1].find('a')['href'])
+            team_page = requests.get(team_url)
+            team_soup = BeautifulSoup(team_page.text, 'lxml')
+            team = team_soup.find('h1').find_all('span')[1].text.strip()
+            one_year_dict['Team'] = team
             #Games Played
             games_played = row.find_all('td')[4].text
             games_played = modify_stat_type(games_played, int)
