@@ -73,7 +73,7 @@ def generate_player_data(url):
             positions[n[0]] = positions[n[0]].strip(',')
 
     #GET PLAYER PHYSICAL INFO
-    height_weight_field = access_field(player_info_fields, ['lb', 'cm', 'kg'], 0)     # O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
+    height_weight_field = access_field(player_info_fields, ['cm', 'kg'], 0)     # O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
     if height_weight_field is not None:
         separated_height_weight = height_weight_field.text.split('(')[1].rstrip()[:-1].split(',')
         height = separated_height_weight[0][:-2]
@@ -95,8 +95,9 @@ def generate_player_data(url):
         pick = separated_round_pick[1][0]
         draft_year = draft_field.find_all('a')[1].text[0:4]    
 
-    #GET REGULAR SEASON STATS
+#GET REGULAR SEASON STATS
     rs_stats_per_game_list = []
+    team_tl_code = None
     for row in rs_stats_per_game_rows:
         one_year_dict = {}
         
@@ -108,89 +109,87 @@ def generate_player_data(url):
             season = modify_stat_type(season,int)
             one_year_dict['Season'] = season
             #Team
-            team_url = 'https://www.basketball-reference.com/' + (row.find_all('td')[1].find('a')['href'])
-            team_page = requests.get(team_url)
-            team_soup = BeautifulSoup(team_page.text, 'lxml')
-            team = team_soup.find('h1').find_all('span')[1].text.strip()
+            if team_tl_code != row.find('td', {'data-stat' : 'team_id'}).find('a').text:
+                team_tl_code = row.find('td', {'data-stat' : 'team_id'}).find('a').text
+                team_url = 'https://www.basketball-reference.com/' + (row.find('td', {'data-stat' : 'team_id'}).find('a')['href'])
+                team_page = requests.get(team_url)
+                team_soup = BeautifulSoup(team_page.text, 'lxml')
+                team = team_soup.find('h1').find_all('span')[1].text.strip()
             one_year_dict['Team'] = team
             #Games Played
-            games_played = row.find_all('td')[4].text
+            games_played = row.find('td', {'data-stat' : 'g'}).text
             games_played = modify_stat_type(games_played, int)
             one_year_dict['Games Played'] = games_played
             #Games Started
-            games_started = row.find_all('td')[5].text
+            games_started = row.find('td', {'data-stat' : 'gs'}).text
             games_started = modify_stat_type(games_started, int)
             one_year_dict['Games Started'] = games_started
             #Minutes Played
-            minutes_played = row.find_all('td')[6].text
+            minutes_played = row.find('td', {'data-stat' : 'mp_per_g'}).text
             minutes_played = modify_stat_type(minutes_played, float)
             one_year_dict['Minutes Played'] = minutes_played
             #Field Goals
-            field_goals = row.find_all('td')[7].text
+            field_goals = row.find('td', {'data-stat' : 'fg_per_g'}).text
             field_goals = modify_stat_type(field_goals, float)
             one_year_dict['Field Goals'] = field_goals
             #Field Goal Attempts
-            field_goal_attempts = row.find_all('td')[8].text
+            field_goal_attempts = row.find('td', {'data-stat' : 'fga_per_g'}).text
             field_goal_attempts = modify_stat_type(field_goal_attempts, float)
             one_year_dict['Field Goal Attempts'] = field_goal_attempts
             #Field Goal Percentage
-            field_goal_percentage = ('0' + row.find_all('td')[9].text)
+            field_goal_percentage = ('0' + row.find('td', {'data-stat' : 'fg_pct'}).text)
             field_goal_percentage = modify_stat_type(field_goal_percentage, float)
             one_year_dict['Field Goal Percentage'] = field_goal_percentage
             #Three Points
-            three_points = row.find_all('td')[10].text
+            three_points = row.find('td', {'data-stat' : 'fg3_per_g'}).text
             three_points = modify_stat_type(three_points, float)
             one_year_dict['Three Points'] = three_points
             #Three Point Attempts
-            three_point_attempts = row.find_all('td')[11].text
+            three_point_attempts = row.find('td', {'data-stat' : 'fg3a_per_g'}).text
             three_point_attempts = modify_stat_type(three_point_attempts, float)
             one_year_dict['Three Point Attempts'] = three_point_attempts
             #Three Point Percentage
-            three_point_percentage = ('0' + row.find_all('td')[12].text)
+            three_point_percentage = ('0' + row.find('td', {'data-stat' : 'fg3_pct'}).text)
             three_point_percentage = modify_stat_type(three_point_percentage, float)
             one_year_dict['Three Point Percentage'] = three_point_percentage
             #Fhree Throws
-            free_throws = row.find_all('td')[17].text
+            free_throws = row.find('td', {'data-stat' : 'ft_per_g'}).text
             free_throws = modify_stat_type(free_throws, float)
             one_year_dict['Free Throws'] = free_throws
             #Fhree Throw Attempts
-            free_throws_attempts = row.find_all('td')[18].text
+            free_throws_attempts = row.find('td', {'data-stat' : 'fta_per_g'}).text
             free_throws_attempts = modify_stat_type(free_throws_attempts, float)
             one_year_dict['Free Throws Attempts'] = free_throws_attempts
             #Fhree Throw Percentage
-            free_throws_percentage = ('0' + row.find_all('td')[19].text)
+            free_throws_percentage = ('0' + row.find('td', {'data-stat' : 'ft_pct'}).text)
             free_throws_percentage = modify_stat_type(free_throws_percentage, float)
             one_year_dict['Free Throws Percentage'] = free_throws_percentage
-            #Offensive Rebounds
-            offensive_rebounds = row.find_all('td')[20].text
-            offensive_rebounds = modify_stat_type(offensive_rebounds, float)
-            one_year_dict['Offensive Rebounds'] = offensive_rebounds
-            #Defensive Rebounds
-            defensive_rebounds = row.find_all('td')[21].text
-            defensive_rebounds = modify_stat_type(defensive_rebounds, float)
-            one_year_dict['Defensive Rebounds'] = defensive_rebounds
+            #Rebounds
+            rebounds = row.find('td', {'data-stat' : 'trb_per_g'}).text
+            rebounds = modify_stat_type(rebounds, float)
+            one_year_dict['Rebounds'] = rebounds
             #Assists
-            assists = row.find_all('td')[23].text
+            assists = row.find('td', {'data-stat' : 'ast_per_g'}).text
             assists = modify_stat_type(assists, float)
             one_year_dict['Assists'] = assists
             #Steals
-            steals = row.find_all('td')[24].text
+            steals = row.find('td', {'data-stat' : 'stl_per_g'}).text
             steals = modify_stat_type(steals, float)
             one_year_dict['Steals'] = steals
             #Blocks
-            blocks = row.find_all('td')[25].text
+            blocks = row.find('td', {'data-stat' : 'blk_per_g'}).text
             blocks = modify_stat_type(blocks, float)
             one_year_dict['Blocks'] = blocks
             #Turnovers
-            turnovers = row.find_all('td')[26].text
+            turnovers = row.find('td', {'data-stat' : 'tov_per_g'}).text
             turnovers = modify_stat_type(turnovers, float)
             one_year_dict['Turnovers'] = turnovers
             #Personal Fouls
-            personal_fouls = row.find_all('td')[27].text
+            personal_fouls = row.find('td', {'data-stat' : 'pf_per_g'}).text
             personal_fouls = modify_stat_type(personal_fouls, float)
             one_year_dict['Personal Fouls'] = personal_fouls
             #Points
-            points = row.find_all('td')[28].text
+            points = row.find('td', {'data-stat' : 'pts_per_g'}).text
             points = modify_stat_type(points, float)
             one_year_dict['Points'] = points
 
@@ -198,6 +197,7 @@ def generate_player_data(url):
 
     #GET PLAYOFFS STATS
     po_stats_per_game_list = []
+    team_tl_code = None
     for row in po_stats_per_game_rows:
         one_year_dict = {}
         
@@ -209,89 +209,87 @@ def generate_player_data(url):
             season = modify_stat_type(season,int)
             one_year_dict['Season'] = season
             #Team
-            team_url = 'https://www.basketball-reference.com/' + (row.find_all('td')[1].find('a')['href'])
-            team_page = requests.get(team_url)
-            team_soup = BeautifulSoup(team_page.text, 'lxml')
-            team = team_soup.find('h1').find_all('span')[1].text.strip()
+            if team_tl_code != row.find('td', {'data-stat' : 'team_id'}).find('a').text:
+                team_tl_code = row.find('td', {'data-stat' : 'team_id'}).find('a').text
+                team_url = 'https://www.basketball-reference.com/' + (row.find('td', {'data-stat' : 'team_id'}).find('a')['href'])
+                team_page = requests.get(team_url)
+                team_soup = BeautifulSoup(team_page.text, 'lxml')
+                team = team_soup.find('h1').find_all('span')[1].text.strip()
             one_year_dict['Team'] = team
             #Games Played
-            games_played = row.find_all('td')[4].text
+            games_played = row.find('td', {'data-stat' : 'g'}).text
             games_played = modify_stat_type(games_played, int)
             one_year_dict['Games Played'] = games_played
             #Games Started
-            games_started = row.find_all('td')[5].text
+            games_started = row.find('td', {'data-stat' : 'gs'}).text
             games_started = modify_stat_type(games_started, int)
             one_year_dict['Games Started'] = games_started
             #Minutes Played
-            minutes_played = row.find_all('td')[6].text
+            minutes_played = row.find('td', {'data-stat' : 'mp_per_g'}).text
             minutes_played = modify_stat_type(minutes_played, float)
             one_year_dict['Minutes Played'] = minutes_played
             #Field Goals
-            field_goals = row.find_all('td')[7].text
+            field_goals = row.find('td', {'data-stat' : 'fg_per_g'}).text
             field_goals = modify_stat_type(field_goals, float)
             one_year_dict['Field Goals'] = field_goals
             #Field Goal Attempts
-            field_goal_attempts = row.find_all('td')[8].text
+            field_goal_attempts = row.find('td', {'data-stat' : 'fga_per_g'}).text
             field_goal_attempts = modify_stat_type(field_goal_attempts, float)
             one_year_dict['Field Goal Attempts'] = field_goal_attempts
             #Field Goal Percentage
-            field_goal_percentage = ('0' + row.find_all('td')[9].text)
+            field_goal_percentage = ('0' + row.find('td', {'data-stat' : 'fg_pct'}).text)
             field_goal_percentage = modify_stat_type(field_goal_percentage, float)
             one_year_dict['Field Goal Percentage'] = field_goal_percentage
             #Three Points
-            three_points = row.find_all('td')[10].text
+            three_points = row.find('td', {'data-stat' : 'fg3_per_g'}).text
             three_points = modify_stat_type(three_points, float)
             one_year_dict['Three Points'] = three_points
             #Three Point Attempts
-            three_point_attempts = row.find_all('td')[11].text
+            three_point_attempts = row.find('td', {'data-stat' : 'fg3a_per_g'}).text
             three_point_attempts = modify_stat_type(three_point_attempts, float)
             one_year_dict['Three Point Attempts'] = three_point_attempts
             #Three Point Percentage
-            three_point_percentage = ('0' + row.find_all('td')[12].text)
+            three_point_percentage = ('0' + row.find('td', {'data-stat' : 'fg3_pct'}).text)
             three_point_percentage = modify_stat_type(three_point_percentage, float)
             one_year_dict['Three Point Percentage'] = three_point_percentage
             #Fhree Throws
-            free_throws = row.find_all('td')[17].text
+            free_throws = row.find('td', {'data-stat' : 'ft_per_g'}).text
             free_throws = modify_stat_type(free_throws, float)
             one_year_dict['Free Throws'] = free_throws
             #Fhree Throw Attempts
-            free_throws_attempts = row.find_all('td')[18].text
+            free_throws_attempts = row.find('td', {'data-stat' : 'fta_per_g'}).text
             free_throws_attempts = modify_stat_type(free_throws_attempts, float)
             one_year_dict['Free Throws Attempts'] = free_throws_attempts
             #Fhree Throw Percentage
-            free_throws_percentage = ('0' + row.find_all('td')[19].text)
+            free_throws_percentage = ('0' + row.find('td', {'data-stat' : 'ft_pct'}).text)
             free_throws_percentage = modify_stat_type(free_throws_percentage, float)
             one_year_dict['Free Throws Percentage'] = free_throws_percentage
-            #Offensive Rebounds
-            offensive_rebounds = row.find_all('td')[20].text
-            offensive_rebounds = modify_stat_type(offensive_rebounds, float)
-            one_year_dict['Offensive Rebounds'] = offensive_rebounds
-            #Defensive Rebounds
-            defensive_rebounds = row.find_all('td')[21].text
-            defensive_rebounds = modify_stat_type(defensive_rebounds, float)
-            one_year_dict['Defensive Rebounds'] = defensive_rebounds
+            #Rebounds
+            rebounds = row.find('td', {'data-stat' : 'trb_per_g'}).text
+            rebounds = modify_stat_type(rebounds, float)
+            one_year_dict['Rebounds'] = rebounds
             #Assists
-            assists = row.find_all('td')[23].text
+            assists = row.find('td', {'data-stat' : 'ast_per_g'}).text
             assists = modify_stat_type(assists, float)
             one_year_dict['Assists'] = assists
             #Steals
-            steals = row.find_all('td')[24].text
+            steals = row.find('td', {'data-stat' : 'stl_per_g'}).text
             steals = modify_stat_type(steals, float)
             one_year_dict['Steals'] = steals
             #Blocks
-            blocks = row.find_all('td')[25].text
+            blocks = row.find('td', {'data-stat' : 'blk_per_g'}).text
             blocks = modify_stat_type(blocks, float)
             one_year_dict['Blocks'] = blocks
             #Turnovers
-            turnovers = row.find_all('td')[26].text
+            turnovers = row.find('td', {'data-stat' : 'tov_per_g'}).text
             turnovers = modify_stat_type(turnovers, float)
             one_year_dict['Turnovers'] = turnovers
             #Personal Fouls
-            personal_fouls = row.find_all('td')[27].text
+            personal_fouls = row.find('td', {'data-stat' : 'pf_per_g'}).text
             personal_fouls = modify_stat_type(personal_fouls, float)
             one_year_dict['Personal Fouls'] = personal_fouls
             #Points
-            points = row.find_all('td')[28].text
+            points = row.find('td', {'data-stat' : 'pts_per_g'}).text
             points = modify_stat_type(points, float)
             one_year_dict['Points'] = points
 

@@ -122,8 +122,8 @@ def insert_player_data(url):
                     insert_stats_script =   '''
                                             INSERT INTO player_rs_stats
                                             (player_id, season, team_id,
-                                            gp, gs, mp, fg, fga, fgp, tp, tpa, tpp, ft, fta, ftp, ofr, dfr, ast, stl, blk, tov, pf, pts)
-                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            gp, gs, mp, fg, fga, fgp, tp, tpa, tpp, ft, fta, ftp, rb, ast, stl, blk, tov, pf, pts)
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                             '''
                     insert_stats_values =   (p_id,
                                             stat['Season'],
@@ -140,8 +140,7 @@ def insert_player_data(url):
                                             stat['Free Throws'],
                                             stat['Free Throws Attempts'],
                                             stat['Free Throws Percentage'],
-                                            stat['Offensive Rebounds'],
-                                            stat['Defensive Rebounds'],
+                                            stat['Rebounds'],
                                             stat['Assists'],
                                             stat['Steals'],
                                             stat['Blocks'],
@@ -167,8 +166,8 @@ def insert_player_data(url):
                     insert_stats_script =   '''
                                             INSERT INTO player_po_stats
                                             (player_id, season, team_id,
-                                            gp, gs, mp, fg, fga, fgp, tp, tpa, tpp, ft, fta, ftp, ofr, dfr, ast, stl, blk, tov, pf, pts)
-                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            gp, gs, mp, fg, fga, fgp, tp, tpa, tpp, ft, fta, ftp, rb, ast, stl, blk, tov, pf, pts)
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                             '''
                     insert_stats_values =   (p_id,
                                             stat['Season'],
@@ -185,8 +184,7 @@ def insert_player_data(url):
                                             stat['Free Throws'],
                                             stat['Free Throws Attempts'],
                                             stat['Free Throws Percentage'],
-                                            stat['Offensive Rebounds'],
-                                            stat['Defensive Rebounds'],
+                                            stat['Rebounds'],
                                             stat['Assists'],
                                             stat['Steals'],
                                             stat['Blocks'],

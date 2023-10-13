@@ -11,6 +11,8 @@ soup = BeautifulSoup(page.text, 'lxml')
 all_a = soup.find_all('a')
 all_letters_href = [a['href'] for a in all_a if len(a.text) == 1]
 
+#SCRAP AND PUT ALL PLAYERS IN THE DATABASE
+
 '''
 #TEST WITH ONE PLAYER
 op_url = 'https://www.basketball-reference.com/players/j/jordami01.html'

@@ -81,7 +81,7 @@ def generate_teams_data():
                     for d in ds:
                         if t[0] in division_team[d]:
                             active_teams_wcd_dict[t[0]] = {'Conf': c, 'Div': d}
-    '''
+    
     #PRINTS (Para chequear)        
     
     for t in teams:
@@ -91,7 +91,6 @@ def generate_teams_data():
     print('\n\n')
     
     for t, n in active_teams_names_dict.items():
-        print(f'{t.upper()}: {n}\n')
-    '''
+        print(f'{t.upper()}: {n}\n')  
     
     return teams, active_teams_wr_dict, active_teams_wcd_dict
