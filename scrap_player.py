@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+from urllib.parse import urljoin
 
 #ACCESS FIELD FUNCTION (Busca, en una lista de campos, uno en específico, siguiendo una condición (contiene a))
 def access_field(fields, condition, before_next):
@@ -102,16 +103,20 @@ def generate_player_data(url):
         one_year_dict = {}
         
         #Le puse esto porque, en las temporadas que no jugó, el "th", que es donde está la "season" no existe, en cambio es un "td". El ".text" lo pongo después porque no me deja hacer un ".text" de un "None"
-        season = row.find('th')
-        if season is not None:
+        season_cell = row.find('th')
+        if season_cell is not None:
             #Season
-            season = (season.text[0:2] + season.text[-2:])
+            season = (season_cell.text[0:2] + season_cell.text[-2:])
             season = modify_stat_type(season,int)
             one_year_dict['Season'] = season
             #Team
-            if team_tl_code != row.find('td', {'data-stat' : 'team_id'}).find('a').text:
-                team_tl_code = row.find('td', {'data-stat' : 'team_id'}).find('a').text
-                team_url = 'https://www.basketball-reference.com/' + (row.find('td', {'data-stat' : 'team_id'}).find('a')['href'])
+            team_cell = row.find('td', {'data-stat' : 'team_id'})
+            if team_tl_code != team_cell.text:
+                team_tl_code = team_cell.text
+                if team_cell.find('a') is not None:
+                    team_url = urljoin('https://www.basketball-reference.com', team_cell.find('a')['href'])
+                else:
+                    continue
                 team_page = requests.get(team_url)
                 team_soup = BeautifulSoup(team_page.text, 'lxml')
                 team = team_soup.find('h1').find_all('span')[1].text.strip()
@@ -202,16 +207,20 @@ def generate_player_data(url):
         one_year_dict = {}
         
         #Acá no hace falta lo del "th" que puse en los stats de regular season, pero lo dejo como validación
-        season = row.find('th')
-        if season is not None:
+        season_cell = row.find('th')
+        if season_cell is not None:
             #Season
-            season = (season.text[0:2] + season.text[-2:])
+            season = (season_cell.text[0:2] + season_cell.text[-2:])
             season = modify_stat_type(season,int)
             one_year_dict['Season'] = season
             #Team
-            if team_tl_code != row.find('td', {'data-stat' : 'team_id'}).find('a').text:
-                team_tl_code = row.find('td', {'data-stat' : 'team_id'}).find('a').text
-                team_url = 'https://www.basketball-reference.com/' + (row.find('td', {'data-stat' : 'team_id'}).find('a')['href'])
+            team_cell = row.find('td', {'data-stat' : 'team_id'})
+            if team_tl_code != team_cell.text:
+                team_tl_code = team_cell.text
+                if team_cell.find('a') is not None:
+                    team_url = urljoin('https://www.basketball-reference.com', team_cell.find('a')['href'])
+                else:
+                    continue
                 team_page = requests.get(team_url)
                 team_soup = BeautifulSoup(team_page.text, 'lxml')
                 team = team_soup.find('h1').find_all('span')[1].text.strip()
