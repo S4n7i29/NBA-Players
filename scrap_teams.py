@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
 import requests
 
+from prints import print_teams_data
+
 def generate_teams_data():
 
     #SET SOUP
@@ -83,14 +85,9 @@ def generate_teams_data():
                             active_teams_wcd_dict[t[0]] = {'Conf': c, 'Div': d}
     
     #PRINTS (Para chequear)        
-    
-    for t in teams:
-        if t[1] == True:
-            print(f'\n{t[0].upper()} - Rings: {active_teams_wr_dict[t[0]]}, Conference: {active_teams_wcd_dict[t[0]]["Conf"]}, Division: {active_teams_wcd_dict[t[0]]["Div"]}')
-
-    print('\n\n')
-    
-    for t, n in active_teams_names_dict.items():
-        print(f'{t.upper()}: {n}\n')  
+    print_teams_data(teams,
+                     active_teams_wr_dict,
+                     active_teams_wcd_dict,
+                     active_teams_names_dict)
     
     return teams, active_teams_wr_dict, active_teams_wcd_dict

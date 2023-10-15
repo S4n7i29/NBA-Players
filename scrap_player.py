@@ -124,6 +124,8 @@ def generate_player_data(url):
     if college_field is not None:
         college                 =   college_field.text.strip()[19:]
                                     #Saca el 'College: ' y los primeros caracteres raros
+    else:
+        college = None
 
     #GET DRAFT
     draft_field                 =   access_field(player_info_fields, 'Draft:', 0)
@@ -139,6 +141,8 @@ def generate_player_data(url):
                                     #Toma sólo el número del pick (que es el primer caracter)
         draft_year              =   draft_as[1].text[:4]
                                     #Como los años son de 4 dígitos, toma sólo hasta el cuarto
+    else:
+        draft_team, round, pick, draft_year = None
 
     #GET REGULAR SEASON STATS
     rs_stats_per_game_list = []

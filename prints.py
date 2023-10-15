@@ -1,4 +1,4 @@
-#PRINTS
+#PRINT PLAYER DATA FUNCTION
 def print_player_data(f_name, l_name, d_birth, p_birth, s_birth, c_birth, sho, pos, hei, wei, col, d_team, d_round, d_pick, d_year, rs_stats_list, po_stats_list):
     print("\nPLAYER INFO:")
     print("\nFirst Name: " + f_name)
@@ -34,3 +34,14 @@ def print_player_data(f_name, l_name, d_birth, p_birth, s_birth, c_birth, sho, p
         print("----------------------")
         for c, v in e.items():
             print(f'{c.upper()}: {v}')
+
+#PRINT PLAYER DATA FUNCTION
+def print_teams_data(teams_list, teams_rings, teams_conference_division, teams_names):
+    for t in teams_list:
+        if t[1] == True:
+            print(f'\n{t[0].upper()} - Rings: {teams_rings[t[0]]}, Conference: {teams_conference_division[t[0]]["Conf"]}, Division: {teams_conference_division[t[0]]["Div"]}')
+
+    print('\n\n')
+    
+    for t, n in teams_names.items():
+        print(f'{t.upper()}: {n}\n')
