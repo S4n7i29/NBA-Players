@@ -3,19 +3,26 @@ import requests
 from urllib.parse import urljoin
 import re
 
-#ACCESS FIELD FUNCTION (Busca, en una lista de campos, uno en específico, siguiendo una condición (contiene a))
-def access_field(fields, conditions, before_next):
+#ACCESS FIELD FUNCTION (Busca en una lista de campos uno en específico, siguiendo una condición (contiene a), permitiendo acceder desde el campo encontrado al anterior, posterior, etc)
+def access_field(fields, conditions, before_next, all_conditions=True):
     if type(conditions) != list:
         conditions = [conditions]
     
     x_field = None
     
-    for condition in conditions:
-        for index, field in enumerate(fields):
-            if condition in field.text:
+    for index, field in enumerate(fields):
+        if all_conditions:
+            # Verificar si todas las condiciones se cumplen en el campo actual
+            if all(condition in field.text for condition in conditions):
                 x_field = fields[index + before_next]
                 break
-        return x_field
+        else:
+            # Verificar si al menos una de las condiciones se cumple en el campo actual
+            if any(condition in field.text for condition in conditions):
+                x_field = fields[index + before_next]
+                break
+    
+    return x_field
 
 #HANDLE GETTING DATA ISSUES FUNCTION (Realiza un manejo de posibles errores que puedan tener elementos tomados de un soup)
 def get_data(data):
@@ -44,7 +51,7 @@ def generate_player_data(url):
     soup = BeautifulSoup(page.text, 'lxml')
 
     #SET PLAYER INFO FIELDS
-    player_info                 =   soup.find('div', id='meta').find('div', class_=lambda x: x != 'media-item')   #Me tira un error en el soup, no sé si la página me bloqueó el scrap o qué
+    player_info                 =   soup.find('div', id='meta').find_all('div')[1]
     player_info_fields          =   player_info.find_all('p')
 
     #SET STATS PER GAME TABLES
@@ -58,44 +65,62 @@ def generate_player_data(url):
     po_stats_per_game_rows      =   po_stats_per_game_table.find_all('tr')
 
     #GET NAME
-    name                        =   get_data(player_info.find('h1').find('span').text)
+    name                        =   get_data(player_info.find('h1').text)
     separated_name              =   get_data(name.split(' '))
     first_name                  =   get_data(separated_name[0].strip())
+                                    #Selecciona el nombre y elimina el '\n' a la izquierda
     last_name                   =   get_data(" ".join(separated_name[1:]).strip())
+                                    #Selecciona todo lo que no sea el primer elemento (nombre) y elimina el '\n' a la derecha
 
     #GET BIRTH INFO
     birth_field                 =   access_field(player_info_fields, 'Born:', 0)
-    date_of_birth               =   get_data(birth_field.find_all('span')[0]['data-birth'].rstrip())
-    birth_place                 =   get_data(birth_field.find_all('span')[1].text[8:].rstrip())
+    birth_spans                 =   get_data(birth_field.find_all('span'))
+    date_of_birth               =   get_data(birth_spans[0]['data-birth'])
+    birth_place                 =   get_data(birth_spans[1].text[8:])
+                                    #Saca el 'in' y los primeros caracteres raros
     separated_birth_place       =   get_data(birth_place.split(','))
-    place_of_birth              =   get_data(separated_birth_place[0].rstrip())
-    state_of_birth              =   get_data(" ".join(separated_birth_place[1:])[1:].rstrip())
-    country_of_birth            =   get_data(birth_field.find_all('span')[2].text.rstrip())
-                                    # Falta cambiar los códigos por el país!!!
+    place_of_birth              =   get_data(separated_birth_place[0])
+    state_of_birth              =   get_data(" ".join(separated_birth_place[1:])[1:])
+                                    #Si no le pongo los dos ':1' sale toda bugueada la cadena
+    country_of_birth            =   get_data(birth_spans[2].text)
+                                    #Falta cambiar los códigos por el país!!!
 
     #GET POSITIONS/SHOOTS
     positions_shoots_field      =   access_field(player_info_fields, 'Position:', 0)
     separated_positions_shoots  =   get_data(positions_shoots_field.text.split('▪'))
     shoots                      =   get_data(separated_positions_shoots[1][22:].rstrip())
+                                    #Saca los primeros caracteres raros más el 'Shoots: ' y último
     positions                   =   get_data(re.sub(r', and | and ', ', ' , separated_positions_shoots[0][19:].rstrip())).split(', ')
+                                    #Busca los ', and ' y los ' and ' y normaliza reemplazando todos por una ',', para después usarla de separador en la lista (esto aplicado a la cadena sin los primeros caracteres raros y el 'Position: ')
 
     #GET PHYSICAL INFO
-    height_weight_field         =   access_field(player_info_fields, ['cm', 'kg'], 0)     # O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
+    height_weight_field         =   access_field(player_info_fields, ['lb', 'cm', 'kg'], 0)
+                                    #O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
     separated_height_weight     =   get_data(height_weight_field.text.split('(')[1].rstrip()[:-1].split(','))
+                                    #Toma sólo lo que está después del paréntesis, saca el espacio del final, saca el paréntesis y separa por ','
     height                      =   get_data(separated_height_weight[0][:-2])
+                                    #Saca los últimos dos dígitos (la unidad)
     weight                      =   get_data(separated_height_weight[1][1:][:-2])
+                                    #Saca el primer caracter raro y los últimos dos dígitos (la unidad)
 
     #GET COLLEGE
     college_field               =   access_field(player_info_fields, 'College:', 0)
     college                     =   get_data(college_field.text.strip()[19:])
+                                    #Saca el 'College: ' y los primeros caracteres raros
 
     #GET DRAFT
     draft_field                 =   access_field(player_info_fields, 'Draft:', 0)
-    draft_team                  =   get_data(draft_field.find_all('a')[0].text)
+    draft_as                    =   get_data(draft_field.find_all('a'))
+                                    #Como todos los equipos y todos los años de draft tienen un link, accedo a estos a través de los 'a'
+    draft_team                  =   get_data(draft_as[0].text)
     separated_round_pick        =   get_data(draft_field.text.split(',')[1].strip().split('('))
+                                    #Separa por ',', tomando el segundo elemento, elimina los espacios anterior y posterior y separa con el paréntesis
     round                       =   get_data(separated_round_pick[0][0])
+                                    #Toma sólo el número de la ronda (que es el primer caracter porque ya se eliminó el espacio)
     pick                        =   get_data(separated_round_pick[1][0])
-    draft_year                  =   get_data(draft_field.find_all('a')[1].text[:4])
+                                    #Toma sólo el número del pick (que es el primer caracter)
+    draft_year                  =   get_data(draft_as[1].text[:4])
+                                    #Como los años son de 4 dígitos, toma sólo hasta el cuarto
 
     #GET REGULAR SEASON STATS
     rs_stats_per_game_list = []
