@@ -1,20 +1,28 @@
 from bs4 import BeautifulSoup
 import requests
 from urllib.parse import urljoin
+import re
 
 #ACCESS FIELD FUNCTION (Busca, en una lista de campos, uno en específico, siguiendo una condición (contiene a))
-def access_field(fields, condition, before_next):
-    if type(condition) != list:
-        condition = [condition]
+def access_field(fields, conditions, before_next):
+    if type(conditions) != list:
+        conditions = [conditions]
     
     x_field = None
     
-    for c in condition:
-        for f in enumerate(fields):
-            if c in fields[f[0]].text:
-                x_field = fields[f[0] + before_next]
+    for condition in conditions:
+        for index, field in enumerate(fields):
+            if condition in field.text:
+                x_field = fields[index + before_next]
                 break
         return x_field
+
+#HANDLE GETTING DATA ISSUES FUNCTION (Realiza un manejo de posibles errores que puedan tener elementos tomados de un soup)
+def get_data(data):
+    try:
+        return data
+    except (ValueError, AttributeError, IndexError):
+        return None
 
 #MODIFY STAT TYPE FUNCTION (Valida si el stat está vacío y lo convierte en 'None'. Si no está vacío, lo convierte en el tipo pasado como argumento)
 def modify_stat_type(stat, type):
@@ -36,67 +44,60 @@ def generate_player_data(url):
     soup = BeautifulSoup(page.text, 'lxml')
 
     #SET PLAYER INFO FIELDS
-    player_info = soup.find('div', id='meta').find('div', class_=lambda x: x != 'media-item')   #Me tira un error en el soup, no sé si la página me bloqueó el scrap o qué
-    player_info_fields = player_info.find_all('p')
+    player_info                 =   soup.find('div', id='meta').find('div', class_=lambda x: x != 'media-item')   #Me tira un error en el soup, no sé si la página me bloqueó el scrap o qué
+    player_info_fields          =   player_info.find_all('p')
 
-    #SET STATS TABLES DIV
-    stats_per_game_tables_div = soup.find('div', id='switcher_per_game-playoffs_per_game')
-    #SET REGULAR SEASON STATS PER GAME TABLE
-    rs_stats_per_game_table = stats_per_game_tables_div.find_all('table')[0].find('tbody')
-    rs_stats_per_game_rows = rs_stats_per_game_table.find_all('tr')
-    #SET PLAYOFFS STATS PER GAME TABLE
-    po_stats_per_game_table = stats_per_game_tables_div.find_all('table')[1].find('tbody')
-    po_stats_per_game_rows = po_stats_per_game_table.find_all('tr')
+    #SET STATS PER GAME TABLES
+    stats_per_game_tables_div   =   soup.find('div', id='switcher_per_game-playoffs_per_game')
+    stats_per_game_tables       =   stats_per_game_tables_div.find_all('table')
+    #SET REGULAR SEASON TABLE
+    rs_stats_per_game_table     =   stats_per_game_tables[0].find('tbody')
+    rs_stats_per_game_rows      =   rs_stats_per_game_table.find_all('tr')
+    #SET PLAYOFFS TABLE
+    po_stats_per_game_table     =   stats_per_game_tables[1].find('tbody')
+    po_stats_per_game_rows      =   po_stats_per_game_table.find_all('tr')
 
-    #GET PLAYER NAME
-    name = player_info.find('h1').find('span').text
-    separated_name = name.split(' ')
-    first_name = separated_name[0].strip()
-    last_name = " ".join(separated_name[1:]).strip()
+    #GET NAME
+    name                        =   get_data(player_info.find('h1').find('span').text)
+    separated_name              =   get_data(name.split(' '))
+    first_name                  =   get_data(separated_name[0].strip())
+    last_name                   =   get_data(" ".join(separated_name[1:]).strip())
 
-    #GET PLAYER BIRTH INFO
-    birth_field = access_field(player_info_fields, 'Born:', 0)
-    if birth_field is not None:
-        date_of_birth = birth_field.find_all('span')[0]['data-birth'].rstrip()
-        birth_place = birth_field.find_all('span')[1].text[8:].rstrip()
-        separated_birth_place = birth_place.split(',')
-        place_of_birth = separated_birth_place[0].rstrip()
-        state_of_birth = " ".join(separated_birth_place[1:])[1:].rstrip()
-        country_of_birth = birth_field.find_all('span')[2].text.rstrip()      # Falta cambiar los códigos por el país!!!
+    #GET BIRTH INFO
+    birth_field                 =   access_field(player_info_fields, 'Born:', 0)
+    date_of_birth               =   get_data(birth_field.find_all('span')[0]['data-birth'].rstrip())
+    birth_place                 =   get_data(birth_field.find_all('span')[1].text[8:].rstrip())
+    separated_birth_place       =   get_data(birth_place.split(','))
+    place_of_birth              =   get_data(separated_birth_place[0].rstrip())
+    state_of_birth              =   get_data(" ".join(separated_birth_place[1:])[1:].rstrip())
+    country_of_birth            =   get_data(birth_field.find_all('span')[2].text.rstrip())
+                                    # Falta cambiar los códigos por el país!!!
 
-    #GET PLAYER POSITIONS/SHOOTS
-    positions_shoots_field = access_field(player_info_fields, 'Position:', 0)
-    if positions_shoots_field is not None:
-        separated_positions_shoots = positions_shoots_field.text.split('▪')
-        shoots = separated_positions_shoots[1][22:].rstrip()
-        positions = separated_positions_shoots[0][19:].rstrip().replace(' and ', ', ').split(', ')
-        for n in enumerate(positions):
-            positions[n[0]] = positions[n[0]].strip(',')
+    #GET POSITIONS/SHOOTS
+    positions_shoots_field      =   access_field(player_info_fields, 'Position:', 0)
+    separated_positions_shoots  =   get_data(positions_shoots_field.text.split('▪'))
+    shoots                      =   get_data(separated_positions_shoots[1][22:].rstrip())
+    positions                   =   get_data(re.sub(r', and | and ', ', ' , separated_positions_shoots[0][19:].rstrip())).split(', ')
 
-    #GET PLAYER PHYSICAL INFO
-    height_weight_field = access_field(player_info_fields, ['cm', 'kg'], 0)     # O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
-    if height_weight_field is not None:
-        separated_height_weight = height_weight_field.text.split('(')[1].rstrip()[:-1].split(',')
-        height = separated_height_weight[0][:-2]
-        weight = separated_height_weight[1][1:][:-2]
+    #GET PHYSICAL INFO
+    height_weight_field         =   access_field(player_info_fields, ['cm', 'kg'], 0)     # O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
+    separated_height_weight     =   get_data(height_weight_field.text.split('(')[1].rstrip()[:-1].split(','))
+    height                      =   get_data(separated_height_weight[0][:-2])
+    weight                      =   get_data(separated_height_weight[1][1:][:-2])
 
-    #GET PLAYER COLLEGE
-    college_field = access_field(player_info_fields, 'College:', 0)
-    if college_field is not None:
-        college = college_field.text.strip()[19:]
-    else:
-        college = None
+    #GET COLLEGE
+    college_field               =   access_field(player_info_fields, 'College:', 0)
+    college                     =   get_data(college_field.text.strip()[19:])
 
     #GET DRAFT
-    draft_field = access_field(player_info_fields, 'Draft:', 0)
-    if draft_field is not None:
-        draft_team = draft_field.find_all('a')[0].text
-        separated_round_pick = draft_field.text.split(',')[1].strip().split('(')
-        round = separated_round_pick[0][0]
-        pick = separated_round_pick[1][0]
-        draft_year = draft_field.find_all('a')[1].text[0:4]    
+    draft_field                 =   access_field(player_info_fields, 'Draft:', 0)
+    draft_team                  =   get_data(draft_field.find_all('a')[0].text)
+    separated_round_pick        =   get_data(draft_field.text.split(',')[1].strip().split('('))
+    round                       =   get_data(separated_round_pick[0][0])
+    pick                        =   get_data(separated_round_pick[1][0])
+    draft_year                  =   get_data(draft_field.find_all('a')[1].text[:4])
 
-#GET REGULAR SEASON STATS
+    #GET REGULAR SEASON STATS
     rs_stats_per_game_list = []
     team_tl_code = None
     for row in rs_stats_per_game_rows:
