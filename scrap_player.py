@@ -137,8 +137,10 @@ def generate_player_data(url):
                                     #Separa por ',', tomando el segundo elemento, elimina los espacios anterior y posterior y separa con el paréntesis
         round                   =   separated_round_pick[0][0]
                                     #Toma sólo el número de la ronda (que es el primer caracter porque ya se eliminó el espacio)
-        pick                    =   separated_round_pick[1][0]
-                                    #Toma sólo el número del pick (que es el primer caracter)
+        pick_match              =   re.search(r'\d+', separated_round_pick[1])
+                                    #Busca una secuencia de uno o más dígitos en el texto correspondiente al pick a través de una expresión regular
+        pick                    =   pick_match.group(0) if pick_match else None
+                                    #Toma, en base al matcheo previo, sólo los caracteres numéricos (para atajar el problema de si tiene 1 o 2 dígitos)
         draft_year              =   draft_as[1].text[:4]
                                     #Como los años son de 4 dígitos, toma sólo hasta el cuarto
     else:
