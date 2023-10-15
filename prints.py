@@ -9,8 +9,8 @@ def print_player_data(f_name, l_name, d_birth, p_birth, s_birth, c_birth, sho, p
     print("Country of Birth: " + c_birth)
     print("\nShoots: " + sho)
     print("Position/s: " + ", ".join(pos))
-    print("\nHeight: " + hei)
-    print("Weight: " + wei)
+    print("\nHeight: " + hei + " cm")
+    print("Weight: " + wei + " kg")
     if col is not None:
         print("\nCollege: " + col)
     else:

@@ -26,26 +26,24 @@ def access_field(fields, conditions, before_next, all_conditions=True):
     
     return x_field
 
-#HANDLE GETTING DATA ISSUES FUNCTION (Realiza un manejo de posibles errores que puedan tener elementos tomados de un soup)
-def get_data(data):
+#HANDLE GETTING DATA ISSUES FUNCTION (Ataja el error que se genera al pretender el 'text' de un 'None')
+def get_text_data(data):
     try:
-        return data
-    except (ValueError, AttributeError, IndexError):
+        return data.text
+    except AttributeError:
         return None
 
 #FIND STAT FUNCTION (Dada una fila de stats en una temporada, obtiene el stat, buscando su celda a través del 'data-stat' (Si 'simple_stat' es False, lo toma como 'pct_stat'))
 def find_stat(season_row, stat_name, simple_stat):
-    if simple_stat:
-        stat = season_row.find('td', {'data-stat' : stat_name}).text
-    else:
-        stat = ('0' + season_row.find('td', {'data-stat' : stat_name}).text)
-    
+    stat = get_text_data(season_row.find('td', {'data-stat' : stat_name}))
+    if not simple_stat and stat is not None:
+        stat = ('0' + stat)
     return stat
 
 #MODIFY STAT TYPE FUNCTION (Valida si el stat está vacío y lo convierte en 'None'. Si no está vacío, lo convierte en el tipo pasado como argumento)
 def modify_stat_type(stat, type):
     if stat.strip() == '':
-        stat = None
+        return None
     else:
         if type is int:
             return int(stat)
@@ -55,7 +53,8 @@ def modify_stat_type(stat, type):
 #GET STAT FUNCTION (Obtiene el stat y modifica su tipo)
 def get_stat(season_row, stat_name, type, simple_stat=True):
     stat = find_stat(season_row, stat_name, simple_stat)
-    stat = modify_stat_type(stat, type)
+    if stat is not None:
+        stat = modify_stat_type(stat, type)
     return stat
 
 def generate_player_data(url):
@@ -82,61 +81,63 @@ def generate_player_data(url):
     po_stats_per_game_rows      =   po_stats_per_game_table.find_all('tr')
 
     #GET NAME
-    name                        =   get_data(player_info.find('h1').text)
-    separated_name              =   get_data(name.split(' '))
-    first_name                  =   get_data(separated_name[0].strip())
+    name                        =   player_info.find('h1')
+    separated_name              =   name.text.split(' ')
+    first_name                  =   separated_name[0].strip()
                                     #Selecciona el nombre y elimina el '\n' a la izquierda
-    last_name                   =   get_data(" ".join(separated_name[1:]).strip())
+    last_name                   =   " ".join(separated_name[1:]).strip()
                                     #Selecciona todo lo que no sea el primer elemento (nombre) y elimina el '\n' a la derecha
 
     #GET BIRTH INFO
     birth_field                 =   access_field(player_info_fields, 'Born:', 0)
-    birth_spans                 =   get_data(birth_field.find_all('span'))
-    date_of_birth               =   get_data(birth_spans[0]['data-birth'])
-    birth_place                 =   get_data(birth_spans[1].text[8:])
+    birth_spans                 =   birth_field.find_all('span')
+    date_of_birth               =   birth_spans[0]['data-birth']
+    birth_place                 =   birth_spans[1].text[8:]
                                     #Saca el 'in' y los primeros caracteres raros
-    separated_birth_place       =   get_data(birth_place.split(','))
-    place_of_birth              =   get_data(separated_birth_place[0])
-    state_of_birth              =   get_data(" ".join(separated_birth_place[1:])[1:])
+    separated_birth_place       =   birth_place.split(',')
+    place_of_birth              =   separated_birth_place[0]
+    state_of_birth              =   " ".join(separated_birth_place[1:])[1:]
                                     #Si no le pongo los dos ':1' sale toda bugueada la cadena
-    country_of_birth            =   get_data(birth_spans[2].text)
+    country_of_birth            =   birth_spans[2].text
                                     #Falta cambiar los códigos por el país!!!
 
     #GET POSITIONS/SHOOTS
     positions_shoots_field      =   access_field(player_info_fields, 'Position:', 0)
-    separated_positions_shoots  =   get_data(positions_shoots_field.text.split('▪'))
-    shoots                      =   get_data(separated_positions_shoots[1][22:].rstrip())
+    separated_positions_shoots  =   positions_shoots_field.text.split('▪')
+    shoots                      =   separated_positions_shoots[1][22:].rstrip()
                                     #Saca los primeros caracteres raros más el 'Shoots: ' y último
-    positions                   =   get_data(re.sub(r', and | and ', ', ' , separated_positions_shoots[0][19:].rstrip())).split(', ')
-                                    #Busca los ', and ' y los ' and ' y normaliza reemplazando todos por una ',', para después usarla de separador en la lista (esto aplicado a la cadena sin los primeros caracteres raros y el 'Position: ')
+    positions                   =   re.sub(r' and |, and |/', ', ', separated_positions_shoots[0][19:].rstrip()).split(', ')
+                                    #Busca los ' and ', los ', and ' y los '/'  y normaliza reemplazando todos por ', ', para después usarla de separador en la lista (esto aplicado a la cadena sin los primeros caracteres raros y el 'Position: ')
 
     #GET PHYSICAL INFO
     height_weight_field         =   access_field(player_info_fields, ['lb', 'cm', 'kg'], 0)
                                     #O podría pasarle como condition sólo 'Position:' y darle de before_next un 1
-    separated_height_weight     =   get_data(height_weight_field.text.split('(')[1].rstrip()[:-1].split(','))
+    separated_height_weight     =   height_weight_field.text.split('(')[1].rstrip()[:-1].split(',')
                                     #Toma sólo lo que está después del paréntesis, saca el espacio del final, saca el paréntesis y separa por ','
-    height                      =   get_data(separated_height_weight[0][:-2])
+    height                      =   separated_height_weight[0][:-2]
                                     #Saca los últimos dos dígitos (la unidad)
-    weight                      =   get_data(separated_height_weight[1][1:][:-2])
+    weight                      =   separated_height_weight[1][1:][:-2]
                                     #Saca el primer caracter raro y los últimos dos dígitos (la unidad)
 
     #GET COLLEGE
     college_field               =   access_field(player_info_fields, 'College:', 0)
-    college                     =   get_data(college_field.text.strip()[19:])
+    if college_field is not None:
+        college                 =   college_field.text.strip()[19:]
                                     #Saca el 'College: ' y los primeros caracteres raros
 
     #GET DRAFT
     draft_field                 =   access_field(player_info_fields, 'Draft:', 0)
-    draft_as                    =   get_data(draft_field.find_all('a'))
+    if draft_field is not None:
+        draft_as                =   draft_field.find_all('a')
                                     #Como todos los equipos y todos los años de draft tienen un link, accedo a estos a través de los 'a'
-    draft_team                  =   get_data(draft_as[0].text)
-    separated_round_pick        =   get_data(draft_field.text.split(',')[1].strip().split('('))
+        draft_team              =   draft_as[0].text
+        separated_round_pick    =   draft_field.text.split(',')[1].strip().split('(')
                                     #Separa por ',', tomando el segundo elemento, elimina los espacios anterior y posterior y separa con el paréntesis
-    round                       =   get_data(separated_round_pick[0][0])
+        round                   =   separated_round_pick[0][0]
                                     #Toma sólo el número de la ronda (que es el primer caracter porque ya se eliminó el espacio)
-    pick                        =   get_data(separated_round_pick[1][0])
+        pick                    =   separated_round_pick[1][0]
                                     #Toma sólo el número del pick (que es el primer caracter)
-    draft_year                  =   get_data(draft_as[1].text[:4])
+        draft_year              =   draft_as[1].text[:4]
                                     #Como los años son de 4 dígitos, toma sólo hasta el cuarto
 
     #GET REGULAR SEASON STATS
