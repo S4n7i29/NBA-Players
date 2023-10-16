@@ -3,6 +3,7 @@ import requests
 from urllib.parse import urljoin
 import re
 
+from dicts.countries_code_dict import countries_code_dict
 from prints import print_player_data
 
 #ACCESS FIELD FUNCTION (Busca en una lista de campos uno en específico, siguiendo una condición (contiene a), permitiendo acceder desde el campo encontrado al anterior, posterior, etc)
@@ -98,8 +99,10 @@ def generate_player_data(url):
     place_of_birth              =   separated_birth_place[0]
     state_of_birth              =   " ".join(separated_birth_place[1:])[1:]
                                     #Si no le pongo los dos ':1' sale toda bugueada la cadena
-    country_of_birth            =   birth_spans[2].text
-                                    #Falta cambiar los códigos por el país!!!
+    country_of_birth_code       =   birth_spans[2].text.upper()
+                                    #Obtiene el código del país
+    country_of_birth            =   countries_code_dict[country_of_birth_code]
+                                    #Reemplaza el código por el nombre del país en base al diccionario de códigos de país
 
     #GET POSITIONS/SHOOTS
     positions_shoots_field      =   access_field(player_info_fields, 'Position:', 0)

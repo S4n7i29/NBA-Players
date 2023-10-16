@@ -25,10 +25,3 @@ for letter_url in all_letters_url_list:
         player_href = tr.find('th').find('a')['href']
         player_url = urljoin('https://www.basketball-reference.com', player_href)
         insert_player_data(player_url)
-
-
-'''
-#TEST WITH ONE PLAYER
-op_url = 'https://www.basketball-reference.com/players/j/jordami01.html'
-insert_player_data(op_url)
-'''
